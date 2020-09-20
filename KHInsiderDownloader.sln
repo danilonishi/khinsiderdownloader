@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30406.217
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KHInsiderDownloader", "KHInsiderDownloader\KHInsiderDownloader.csproj", "{29C7F592-2C42-4F1F-96BF-B073E7D22C32}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{29C7F592-2C42-4F1F-96BF-B073E7D22C32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29C7F592-2C42-4F1F-96BF-B073E7D22C32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29C7F592-2C42-4F1F-96BF-B073E7D22C32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29C7F592-2C42-4F1F-96BF-B073E7D22C32}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CED7B550-6F9A-4714-8670-CB1E71BE775E}
+	EndGlobalSection
+EndGlobal
