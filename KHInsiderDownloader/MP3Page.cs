@@ -22,8 +22,13 @@ namespace KHInsiderDownloader
 			doc = web.Load(url);
 			audioNode = doc.DocumentNode.SelectSingleNode("//audio");
 
+
 			// Album Directory
 			string albumPath = downloadFolderPath;
+			foreach (var c in Path.GetInvalidPathChars())
+			{
+				albumPath = albumPath.Replace(c, '-');
+			}
 			if (!Directory.Exists(albumPath))
 			{
 				Directory.CreateDirectory(albumPath);

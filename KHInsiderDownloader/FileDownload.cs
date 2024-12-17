@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace KHInsiderDownloader
@@ -57,7 +58,24 @@ namespace KHInsiderDownloader
 
 		private void Cli_DownloadDataCompleted(object sender, DownloadDataCompletedEventArgs e)
 		{
-			File.WriteAllBytes(localFilePath, e.Result);
+            var fullPath = localFilePath;
+
+			int fnIndex = fullPath.LastIndexOf('\\');
+            int extIndex = fullPath.LastIndexOf('.');
+			var basePath = fullPath.Substring(0, fnIndex+1);
+			var fileName = localFilePath.Substring(fnIndex+1, extIndex - fnIndex-1);
+            var ext = fullPath.Substring(extIndex);
+            
+            // Fix invalid chars in path
+            var invalidChars = Path.GetInvalidFileNameChars();
+			foreach(var c in invalidChars)
+			{
+                fileName = fileName.Replace(c, '_');
+            }
+
+			var finalFilePath = Path.Combine(basePath, fileName + ext);
+
+            File.WriteAllBytes(finalFilePath, e.Result);
 			Progress = 100;
 			Debug.WriteLine("FD Completed.");
 			Completed();

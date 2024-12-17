@@ -217,7 +217,8 @@ namespace KHInsiderDownloader
 
 			fileDownloader = new Downloader();
 			fileDownloader.Completed += FileDownloader_Completed;
-			fileDownloader.ProgressChanged += FileDownloader_ProgressChanged;
+            fileDownloader.Canceled += FileDownloader_Cancelled;
+            fileDownloader.ProgressChanged += FileDownloader_ProgressChanged;
 
 			toolStripStatusLabel.Text = "Fetching Download File List. This may take a while.";
 			Thread.Sleep(100);
@@ -243,7 +244,14 @@ namespace KHInsiderDownloader
 
 		}
 
-		private void FileDownloader_ProgressChanged(int obj)
+        private void FileDownloader_Cancelled(FileDownload download)
+        {
+            progressBar.Value = 0;
+            SetDownloadButtonEnabled(true);
+            fileDownloader.Dispose();
+        }
+
+        private void FileDownloader_ProgressChanged(int obj)
 		{
 			progressBar.Value = obj;
 		}
@@ -252,7 +260,9 @@ namespace KHInsiderDownloader
 		{
 			progressBar.Value = 100;
 			SetDownloadButtonEnabled(true);
-		}
+			fileDownloader.Dispose();
+
+        }
 
 		private void selectAllButton_Click(object sender, EventArgs e)
 		{

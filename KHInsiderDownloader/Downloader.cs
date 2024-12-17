@@ -89,7 +89,7 @@ namespace KHInsiderDownloader
 			{
 				Debug.WriteLine("Process Finished.");
 				Completed();
-				downloads.Clear();
+				downloads?.Clear();
 				Status = DownloaderStatus.Ready;
 			}
 		}
