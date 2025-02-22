@@ -1,8 +1,10 @@
 ﻿using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,6 +15,9 @@ namespace KHInsiderDownloader
 		private HtmlWeb web;
 		private HtmlDocument doc;
 		private HtmlNodeCollection linkNodes;
+		private string pageUrl;
+
+		public Action OnPageLoaded = delegate { };
 
 		public bool fixNames = true;
 		public string possibleAlbumName { get; private set; }
@@ -24,30 +29,46 @@ namespace KHInsiderDownloader
 
 		public void LoadURL(string url)
 		{
-			// Startup
-			web = new HtmlWeb();
-			doc = web.Load(url);
-			linkNodes = doc.DocumentNode.SelectNodes("//a");
-			validHashset = new HashSet<string>();
+            BackgroundWorker worker = new BackgroundWorker();
 
-			// Get Links
-			foreach (var linkNode in linkNodes)
-			{
-				string linkURL = linkNode.GetAttributeValue("href", "");
-				if (linkURL.EndsWith(".mp3"))
-				{
-					validHashset.Add(url + "/" + linkURL.Split('/').Last());
-				}
-			}
-			validLinks = validHashset.ToArray();
+			pageUrl = url;
+			worker.DoWork += HandleWork;
+            worker.RunWorkerCompleted += HandleWorkCompleted;
 
-			// Album Name
-			var h2 = doc.DocumentNode.SelectNodes("//h2").First();
-			possibleAlbumName = h2.InnerText;
+            worker.RunWorkerAsync();
 
-		}
+        }
 
-		public string[] GetFileNames()
+        private void HandleWorkCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            OnPageLoaded();
+        }
+
+        private void HandleWork(object sender, DoWorkEventArgs e)
+        {
+            // Startup
+            web = new HtmlWeb();
+            doc = web.Load(pageUrl);
+            linkNodes = doc.DocumentNode.SelectNodes("//a");
+            validHashset = new HashSet<string>();
+
+            // Get Links
+            foreach (var linkNode in linkNodes)
+            {
+                string linkURL = linkNode.GetAttributeValue("href", "");
+                if (linkURL.EndsWith(".mp3"))
+                {
+                    validHashset.Add(pageUrl + "/" + linkURL.Split('/').Last());
+                }
+            }
+            validLinks = validHashset.ToArray();
+
+            // Album Name
+            var h2 = doc.DocumentNode.SelectNodes("//h2").First();
+            possibleAlbumName = h2.InnerText;
+        }
+
+        public string[] GetFileNames()
 		{
 			int idx = 0;
 			string[] values = new string[validHashset.Count];

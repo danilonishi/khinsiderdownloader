@@ -112,18 +112,21 @@ namespace KHInsiderDownloader
 
 			mainPage = new MainPage();
 			mainPage.LoadURL(siteUrl);
-
-			UpdateDownloadListBox();
-
-			toolStripStatusLabel.Text = "Ready.";
-
-			possibleAlbumName = mainPage.possibleAlbumName;
-
-			string txt = customAlbumTextBox.Text;
-			UpdateLocalDownloadPathLabel();
+			mainPage.OnPageLoaded += HandlePageLoaded;
 		}
 
-		public void UpdateDownloadListBox()
+        private void HandlePageLoaded()
+        {
+            UpdateDownloadListBox();
+            toolStripStatusLabel.Text = "Ready.";
+
+            possibleAlbumName = mainPage.possibleAlbumName;
+
+            string txt = customAlbumTextBox.Text;
+            UpdateLocalDownloadPathLabel();
+        }
+
+        public void UpdateDownloadListBox()
 		{
 			downloadListBox.Items.Clear();
 			var names = mainPage.GetFileNames();
