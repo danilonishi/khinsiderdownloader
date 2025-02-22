@@ -9,144 +9,155 @@ using System.Windows.Forms;
 
 namespace KHInsiderDownloader
 {
-	enum DownloaderStatus
-	{
-		Ready,
-		Downloading
-	}
+    enum DownloaderStatus
+    {
+        Ready,
+        Downloading
+    }
 
-	class Downloader : IDisposable
-	{
-		public event Action<FileDownload> Canceled;
-		public event Action Completed;
-		public event Action<int> ProgressChanged;
+    class Downloader : IDisposable
+    {
+        public event Action<FileDownload> Canceled;
+        public event Action Completed;
+        public event Action<int> ProgressChanged;
 
-		private int count = 0;
-		private int completed = 0;
-		public List<FileDownload> downloads = new List<FileDownload>();
+        private int count = 0;
+        private int completed = 0;
+        public List<FileDownload> downloads = new List<FileDownload>();
 
-		public DownloaderStatus Status { get; private set; }
+        public DownloaderStatus GetStatus()
+        {
+            DownloaderStatus _status = DownloaderStatus.Ready;
+            if (downloads?.Count > 0)
+            {
+                foreach (var item in downloads)
+                    if (item.Progress < 100)
+                        _status = DownloaderStatus.Downloading;
+                return _status;
+            }
+            return DownloaderStatus.Ready;
+        }
 
-		public Downloader()
-		{
-			Status = DownloaderStatus.Ready;
-		}
+        public Downloader()
+        {
 
-		// Management
+        }
 
-		public void Add(FileDownload fd)
-		{
-			AddEvents(fd);
-			downloads.Add(fd);
-			count++;
-		}
+        // Management
 
-		public void Add(string remotePath, string localFilePath)
-		{
-			Add(new FileDownload(remotePath, localFilePath));
-		}
+        public void Add(FileDownload fd)
+        {
+            AddEvents(fd);
+            downloads.Add(fd);
+            count++;
+        }
 
-		public void Cancel(FileDownload fd)
-		{
-			fd.CancelAsync();
-		}
+        public void Add(string remotePath, string localFilePath)
+        {
+            Add(new FileDownload(remotePath, localFilePath));
+        }
 
-		public void CancelAll()
-		{
-			Debug.WriteLine("Cancelling all...");
-			foreach (var d in downloads)
-			{
-				d.CancelAsync();
-			}
-			Clear();
-		}
+        public void Cancel(FileDownload fd)
+        {
+            fd.CancelAsync();
+        }
 
-		public void Clear()
-		{
-			count = completed = 0;
-			foreach (var d in downloads)
-			{
-				d.ProgressChanged -= Download_ProgressChanged;
-				d.Completed -= Download_Completed;
-				d.Dispose();
-			}
-			downloads.Clear();
-		}
+        public void CancelAll()
+        {
+            foreach (var d in downloads)
+            {
+                d.CancelAsync();
+            }
+            Clear();
+        }
 
-		public void StartAll()
-		{
-			Debug.WriteLine("Starting all...");
-			Status = DownloaderStatus.Downloading;
-			foreach (var fd in downloads)
-			{
-				fd.DownloadAsync();
-			}
-		}
+        public void Clear()
+        {
+            count = completed = 0;
+            foreach (var fd in downloads)
+            {
+                fd.ProgressChanged -= Download_ProgressChanged;
+                fd.Completed -= Download_Completed;
+                fd.Dispose();
+            }
+            downloads.Clear();
+            GC.Collect();
+        }
 
-		private void CheckFinished()
-		{
-			if (count == completed)
-			{
-				Debug.WriteLine("Process Finished.");
-				Completed();
-				downloads?.Clear();
-				Status = DownloaderStatus.Ready;
-			}
-		}
+        public void StartAll()
+        {
+            foreach (var fd in downloads)
+            {
+                fd.DownloadAsync();
+            }
+        }
 
-		// Events
+        private void CheckFinished()
+        {
+            if (count == completed)
+            {
+                Completed();
+                downloads?.Clear();
+            }
+        }
 
-		private void AddEvents(FileDownload fd)
-		{
-			fd.ProgressChanged += Download_ProgressChanged;
-			fd.Completed += Download_Completed;
-			fd.Canceled += Download_Canceled;
-		}
+        // Events
 
-		private void RemoveEvents(FileDownload fd)
-		{
-			fd.ProgressChanged += Download_ProgressChanged;
-			fd.Completed += Download_Completed;
-			fd.Canceled += Download_Canceled;
-		}
+        private void AddEvents(FileDownload fd)
+        {
+            fd.ProgressChanged += Download_ProgressChanged;
+            fd.Completed += Download_Completed;
+            fd.Canceled += Download_Canceled;
+        }
 
-		//Callbacks
+        private void RemoveEvents(FileDownload fd)
+        {
+            fd.ProgressChanged -= Download_ProgressChanged;
+            fd.Completed -= Download_Completed;
+            fd.Canceled -= Download_Canceled;
+        }
 
-		private void Download_Canceled(FileDownload fd)
-		{
-			Canceled(fd);
-			RemoveEvents(fd);
-			downloads.Remove(fd);
-			count--;
-			CheckFinished();
-		}
+        //Callbacks
 
-		private void Download_Completed()
-		{
-			completed++;
-			CheckFinished();
-		}
+        private void Download_Canceled(FileDownload fd)
+        {
+            Canceled(fd);
+            RemoveEvents(fd);
+            downloads.Remove(fd);
+            count--;
+            CheckFinished();
+        }
 
-		private void Download_ProgressChanged(int obj)
-		{
-			int progressSum = downloads.Sum(item => item.Progress);
-			int progress = progressSum / count;
-			Debug.WriteLine($"Progress: {progress}");
-			ProgressChanged(progress);
-		}
+        private void Download_Completed()
+        {
+            completed++;
+            CheckFinished();
+        }
 
-		// IDisposable
+        private void Download_ProgressChanged(int obj)
+        {
+            int progressSum = downloads.Sum(item => item.Progress);
+            int progress = progressSum / count;
+            ProgressChanged(progress);
+        }
 
-		public void Dispose()
-		{
-			foreach (var fd in downloads)
-			{
-				fd.Dispose();
-			}
+        // IDisposable
 
-			if (downloads != null)
-				downloads.Clear();
-			downloads = null;
-		}
-	}
+        public void Dispose()
+        {
+            if (downloads != null)
+            {
+                foreach (var fd in downloads)
+                {
+                    fd.ProgressChanged -= Download_ProgressChanged;
+                    fd.Completed -= Download_Completed;
+                    fd.Dispose();
+                }
+                downloads.Clear();
+            }
+            downloads = null;
+            GC.Collect();
+
+        }
+    }
 }

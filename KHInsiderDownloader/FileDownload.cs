@@ -17,9 +17,9 @@ namespace KHInsiderDownloader
 		private string localFilePath;
 		private string remotePath;
 
-		public event Action<FileDownload> Canceled;
-		public event Action Completed;
-		public event Action<int> ProgressChanged;
+		public event Action<FileDownload> Canceled = delegate { };
+		public event Action Completed = delegate { };
+		public event Action<int> ProgressChanged = delegate { };
 
 		public int Progress { get; private set; }
 
@@ -34,7 +34,6 @@ namespace KHInsiderDownloader
 
 		public void DownloadAsync()
 		{
-			Debug.WriteLine("FD DownloadAsync");
 			cli.DownloadProgressChanged += Cli_DownloadProgressChanged;
 			cli.DownloadDataCompleted += Cli_DownloadDataCompleted;
 			cli.DownloadDataAsync(new Uri(remotePath));
@@ -42,7 +41,6 @@ namespace KHInsiderDownloader
 
 		public void CancelAsync()
 		{
-			Debug.WriteLine("FD Cancel");
 			cli.CancelAsync();
 			Canceled(this);
 		}
@@ -52,7 +50,6 @@ namespace KHInsiderDownloader
 		private void Cli_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
 		{
 			Progress = e.ProgressPercentage;
-			Debug.WriteLine("FD Progress:" + Progress);
 			ProgressChanged(Progress);
 		}
 
@@ -77,7 +74,6 @@ namespace KHInsiderDownloader
 
             File.WriteAllBytes(finalFilePath, e.Result);
 			Progress = 100;
-			Debug.WriteLine("FD Completed.");
 			Completed();
 		}
 
@@ -85,11 +81,17 @@ namespace KHInsiderDownloader
 
 		public void Dispose()
 		{
-			cli.Dispose();
+            cli.DownloadProgressChanged -= Cli_DownloadProgressChanged;
+            cli.DownloadDataCompleted -= Cli_DownloadDataCompleted;
+
+            cli.Dispose();
 			cli = null;
-			Canceled = null;
+			localFilePath = null;
+			remotePath = null;
+            Canceled = null;
 			Completed = null;
 			ProgressChanged = null;
+			GC.Collect();
 		}
 	}
 }

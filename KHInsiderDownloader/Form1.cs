@@ -124,6 +124,7 @@ namespace KHInsiderDownloader
 
             string txt = customAlbumTextBox.Text;
             UpdateLocalDownloadPathLabel();
+            SetFetchSoundtrackButtonEnabled(true);
         }
 
         public void UpdateDownloadListBox()
@@ -185,7 +186,7 @@ namespace KHInsiderDownloader
 
 			if (fileDownloader != null)
 			{
-				if (fileDownloader.Status != DownloaderStatus.Ready)
+				if (fileDownloader.GetStatus() != DownloaderStatus.Ready)
 				{
 					enabled = false;
 				}
@@ -193,6 +194,11 @@ namespace KHInsiderDownloader
 
 			downloadButton.Enabled = enabled;
 		}
+
+		private void SetFetchSoundtrackButtonEnabled(bool enabled)
+		{
+			fetchSoundtrackButton.Enabled = enabled;
+        }
 
 
 		// Callbacks
@@ -210,8 +216,8 @@ namespace KHInsiderDownloader
 
 		private void fetchSoundtrackButton_Click(object sender, EventArgs e)
 		{
-			//new AlbumTrackSelector().Show();
-			LoadMainPage();
+			SetFetchSoundtrackButtonEnabled(false);
+            LoadMainPage();
 		}
 
 		private void downloadButton_Click(object sender, EventArgs e)
@@ -224,28 +230,26 @@ namespace KHInsiderDownloader
             fileDownloader.ProgressChanged += FileDownloader_ProgressChanged;
 
 			toolStripStatusLabel.Text = "Fetching Download File List. This may take a while.";
-			Thread.Sleep(100);
 
 			int idx = 0;
 			int count = downloadListBox.SelectedIndices.Count;
-			Debug.WriteLine("Loading music filepaths from " + count + " URLs.");
 			foreach (int item in downloadListBox.SelectedIndices)
 			{
-				FileDownload fd = null;
 				using (var page = new MP3Page())
 				{
-					progressBar.Value = (int)(((float)++idx / (float)count) * 100);
-					Thread.Sleep(100);
-					fd = page.GetFileDownload(mainPage.validLinks[item], completeDownloadFolderPath);
+					//progressBar.Value = (int)(((float)++idx / (float)count) * 100);
+					page.OnFileDownloadAvailable += HandlePageDownloadComplete;
+
+                    page.GetFileDownload(mainPage.validLinks[item], completeDownloadFolderPath);
 				}
-				fileDownloader.Add(fd);
 			}
 			toolStripStatusLabel.Text = $"Listing Completed. Downloading {downloadListBox.SelectedIndices.Count} files.";
-			Thread.Sleep(1000);
-
-			fileDownloader.StartAll();
-
 		}
+
+        private void HandlePageDownloadComplete(FileDownload download)
+        {
+			fileDownloader.Add(download);
+        }
 
         private void FileDownloader_Cancelled(FileDownload download)
         {
